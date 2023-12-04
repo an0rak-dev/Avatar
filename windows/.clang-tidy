@@ -1,0 +1,121 @@
+---
+Checks: >
+  -*,
+  android-*,
+  boost-use-to-string,
+  bugprone-*,
+  clang-analyzer-*,
+  concurrency-*,
+  cert-dcl58-cpp,
+  cert-err58-cpp,
+  cert-err33-c,
+  cert-err34-c,
+  cert-flp30-c,
+  cert-msc51-cpp,
+  cert-oop57-cpp,
+  cert-oop58-cpp,
+  cppcoreguidelines-avoid-const-or-ref-data-members,
+  cppcoreguidelines-avoid-non-const-global-variables,
+  cppcoreguidelines-avoid-goto,
+  cppcoreguidelines-init-variables,
+  cppcoreguidelines-interfaces-global-init,
+  cppcoreguidelines-no-malloc,
+  cppcoreguidelines-prefer-member-initializer,
+  cppcoreguidelines-pro-type-member-init,
+  cppcoreguidelines-slicing,
+  cppcoreguidelines-virtual-class-destructor,
+  google-readability-todo,
+  hicpp-exception-baseclass,
+  hicpp-multiway-paths-covered,
+  llvm-include-order,
+  misc-confusable-identifiers,
+  misc-const-correctness,
+  misc-definitions-in-headers,
+  misc-header-include-cycle,
+  misc-include-cleaner,
+  misc-misleading-bidirectional,
+  misc-misleading-identifier,
+  misc-no-recursion,
+  misc-non-copyable-objects,
+  misc-redundant-expression,
+  misc-static-assert,
+  misc-unused-parameters,
+  modernize-concat-nested-namespaces,
+  modernize-deprecated-headers,
+  modernize-raw-string-literal,
+  modernize-return-braced-init-list,
+  modernize-redundant-void-arg,
+  modernize-use-default-member-init,
+  modernize-use-equals-default,
+  modernize-use-nullptr,
+  modernize-use-override,
+  modernize-use-starts-ends-with,
+  modernize-use-std-numbers,
+  performance-avoid-endl,
+  performance-implicit-conversion-in-loop,
+  performance-no-int-to-ptr,
+  performance-type-promotion-in-math-fn,
+  readability-avoid-const-params-in-decls,
+  readability-avoid-unconditional-preprocessor-if,
+  readability-braces-around-statements,
+  readability-const-return-type,
+  readability-duplicate-include,
+  readability-else-after-return,
+  readability-function-cognitive-complexity,
+  readability-function-size,
+  readability-identifier-length,
+  readability-identifier-naming,
+  readability-inconsistent-declaration-parameter-name,
+  readability-magic-numbers,
+  readability-misleading-indentation,
+  readability-misplaced-array-index,
+  readability-named-parameter,
+  readability-non-const-parameter,
+  readability-redundant-control-flow,
+  readability-redundant-declaration,
+  readability-redundant-function-ptr-dereference,
+  readability-redundant-preprocessor,
+  readability-simplify-boolean-expr,
+  readability-suspicious-call-argument,
+  readability-uppercase-literal-suffix
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*'
+AnalyzeTemporaryDtors: false
+FormatStyle:     none
+CheckOptions:
+  - key: readability-braces-around-statements.ShortStatementLines
+    value: 1         
+  - key: readability-function-size.LineThreshold
+    value: 50              
+  - key: readability-function-size.ParameterThreshold
+    value: 5          
+  - key: readability-identifier-length.MinimumVariableNameLength
+    value: 2   
+  - key: readability-identifier-length.MinimumLoopCounterNameLength
+    value: 1
+  - key: readability-identifier-naming.EnumCase
+    value: lower_case
+  - key: readability-identifier-naming.EnumPrefix
+    value: e_
+  - key: readability-identifier-naming.FunctionCase
+    value: lower_case
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.GlobalFunctionCase
+    value: lower_case
+  - key: readability-identifier-naming.LocalVariableCase
+    value: lower_case
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructPrefix
+    value: s_
+  - key: readability-identifier-naming.TypedefCase
+    value: lower_case
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  - key: readability-inconsistent-declaration-parameter-name.Strict
+    value: true
+  - key: readability-magic-numbers.IgnoredIntegerValues
+    value: "0, 1, 2, 3"
+...
+

@@ -1,0 +1,16 @@
+name: Pull Request CI
+on:
+    push:
+        branches-ignore:
+            - main
+
+jobs:
+    build:
+        runs-on: windows-2022
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+            - name: Setup msbuild
+              uses: microsoft/setup-msbuild@v1.3.1
+            - name: Build the project
+              run: msbuild Avatar.sln /p:configuration=release /p:platform=x64
