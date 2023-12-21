@@ -3,7 +3,7 @@
 
 using namespace Avatar::Core;
 
-LRESULT CALLBACK window_procedure(HWND window_handle, UINT message, WPARAM wide_params, LPARAM long_params) {
+LRESULT CALLBACK windowProcedure(HWND window_handle, UINT message, WPARAM wide_params, LPARAM long_params) {
 	if (WM_CLOSE == message) {
 		PostQuitMessage(0);
 		return 0;
@@ -11,29 +11,29 @@ LRESULT CALLBACK window_procedure(HWND window_handle, UINT message, WPARAM wide_
 	return DefWindowProc(window_handle, message, wide_params, long_params);
 }
 
-Window::Window(unsigned int width, unsigned int height, const wchar_t *app_name) {
-	HINSTANCE  current_process = GetModuleHandle(NULL);
-	WNDCLASSEX window_class    = {
+Window::Window(int width, int height, const wchar_t *app_name) {
+	HINSTANCE        currentProcess = GetModuleHandle(nullptr);
+	const WNDCLASSEX windowClass    = {
       sizeof(WNDCLASSEX),
       CS_HREDRAW | CS_VREDRAW,
-      window_procedure,
+      windowProcedure,
       0,
       0,
-      current_process,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
+      currentProcess,
+      nullptr,
+      nullptr,
+      nullptr,
+      nullptr,
       L"AvatarWindowClass",
-      NULL
+      nullptr
 	};
-	if (0 == RegisterClassEx(&window_class)) {
+	if (0 == RegisterClassEx(&windowClass)) {
 		std::cerr << "Unable to register the window class" << std::endl;
-		this->window_handle = NULL;
+		this->windowHandle = nullptr;
 		return;
 	}
 
-	this->window_handle = CreateWindowEx(
+	this->windowHandle = CreateWindowEx(
 		WS_EX_OVERLAPPEDWINDOW,
 		L"AvatarWindowClass",
 		app_name,
@@ -42,32 +42,32 @@ Window::Window(unsigned int width, unsigned int height, const wchar_t *app_name)
 		CW_USEDEFAULT,
 		width,
 		height,
-		NULL,
-		NULL,
-		current_process,
-		NULL);
+		nullptr,
+		nullptr,
+		currentProcess,
+		nullptr);
 
-	if (NULL == this->window_handle) {
+	if (nullptr == this->windowHandle) {
 		std::cerr << "Unable to create the window handle" << std::endl;
 		return;
 	}
 }
 
 Window::~Window() {
-	if (NULL != this->window_handle) {
-		DestroyWindow(this->window_handle);
+	if (nullptr != this->windowHandle) {
+		DestroyWindow(this->windowHandle);
 	}
 }
 
 void Window::show() {
-	if (NULL != this->window_handle) {
-		ShowWindow(this->window_handle, SW_SHOW);
+	if (nullptr != this->windowHandle) {
+		ShowWindow(this->windowHandle, SW_SHOW);
 	}
 }
 
 bool Window::pollNextEvent() {
 	MSG msg;
-	if (NULL != this->window_handle && GetMessage(&msg, this->window_handle, 0, 0)) {
+	if (nullptr != this->windowHandle && GetMessage(&msg, this->windowHandle, 0, 0)) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 		return true;
@@ -75,6 +75,6 @@ bool Window::pollNextEvent() {
 	return false;
 }
 
-HWND Window::getHandle() const {
-	return this->window_handle;
+HWND Avatar::Core::getHandle(const Window &window) {
+	return window.windowHandle;
 }
