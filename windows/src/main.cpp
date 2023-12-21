@@ -1,12 +1,10 @@
 
-#include <iostream>
-#include <vector>
-#include "window.h"
 #include "dx12_renderer.h"
+#include "window.h"
 
-#define EXIT_OK  0
+#define EXIT_OK 0
 
-#define WINDOW_WIDTH 1280
+#define WINDOW_WIDTH  1280
 #define WINDOW_HEIGHT 720
 #ifdef _DEBUG
 #	define APP_NAME L"Avatar [DEBUG]"
@@ -18,8 +16,7 @@
 
 int main() {
 	// Init
-	HRESULT              result = S_OK;
-	Avatar::Core::Window window(WINDOW_WIDTH, WINDOW_HEIGHT, APP_NAME);
+	Avatar::Core::Window       window(WINDOW_WIDTH, WINDOW_HEIGHT, APP_NAME);
 	Avatar::Core::Dx12Renderer renderer(RENDERER_BUFFERS_COUNT);
 
 	// Display & Game Loop
@@ -29,7 +26,7 @@ int main() {
 	while (window.pollNextEvent()) {
 		renderer.prepareNextFrame();
 
-		renderer.clear(0.0f, 0.0f, 0.0f, 1.0f);
+		renderer.clear(0.0F, 0.0F, 0.0F, 1.0F);
 
 		renderer.present();
 	}

@@ -1,0 +1,41 @@
+name: Pull Request CI
+on:
+    push:
+        branches-ignore:
+            - main
+
+env:
+    CLANG_EXE: 'clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04'
+
+jobs:
+    build:
+        runs-on: windows-2022
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+            - name: Setup msbuild
+              uses: microsoft/setup-msbuild@v1.3.1
+            - name: Build the project
+              run: msbuild Avatar.sln /p:configuration=release /p:platform=x64
+    check-format:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+            - name: Install tools
+              run: |
+                  sudo apt update
+                  sudo apt install wget
+                  wget -O clang.tar.xz "https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/${{ env.CLANG_EXE }}.tar.xz"
+                  tar xvf clang.tar.xz
+                  sudo mv "${{ env.CLANG_EXE }}/bin/clang-format" /usr/local/bin
+                  rm clang.tar.xz && rm -r ${{ env.CLANG_EXE }}
+                  clang-format --version
+            - name: Apply formatting rules.
+              run: |
+                cd windows
+                clang-format --Werror -i src/*.cpp includes/*.h
+            - name: Validate there is no modifications
+              run: |
+                  git status
+                  git add . && git diff --quiet && git diff --quiet --cached

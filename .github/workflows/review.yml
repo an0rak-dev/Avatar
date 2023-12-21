@@ -1,0 +1,185 @@
+name: Pull Request CI
+on:
+    pull_request:
+        types:
+            - opened
+            - synchronize
+            - reopened
+            - ready_for_review
+
+permissions:
+    pull-requests: write
+    issues: write
+
+env:
+    CLANG_EXE: 'clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04'
+
+jobs:
+    check-commit:
+        if: github.event.pull_request.draft == false
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
+            - name: Check commit count
+              run: |
+                 git fetch
+                 git checkout ${{ github.base_ref }} && git pull
+                 git checkout ${{ github.head_ref }} && git pull
+                 commitCount=$(git log --oneline "${{ github.base_ref }}..${{ github.head_ref }}" | wc -l)
+                 if [[ $commitCount -ne 1 ]]; then
+                    echo "A PR should only contains one commit (currently ${commitCount}). Please squash them." >> /tmp/check-commit-result.txt
+                 fi
+                 git log \
+                   --format=%B \
+                   -n 1 \
+                   "${{ github.base_ref }}..${{ github.head_ref }}" \
+                   > /tmp/commitMessage.txt
+            - name: Check commit format
+              uses: actions/github-script@v7
+              with:
+                script: |
+                    const fs = require("fs");
+                    const commitMessage = fs.readFileSync("/tmp/commitMessage.txt", "utf-8");
+                    const paraphs = commitMessage.split(/\n/g).filter((line) => line.length > 0);
+                    var outputMessages = [];
+                    if (paraphs.length < 3) {
+                        outputMessages.push("A commit should contains at least a header, a body and a trailer");
+                    }
+                    if (paraphs[0].length > 50) {
+                        outputMessages.push("A commit header must contains at max 50chars");
+                    }
+                    const trailer = paraphs[paraphs.length-1].split(/:/);
+                    const validChangelogValues = ["added", "fixed", "changed", "deprecated", "removed", "security", "performance", "other"];
+                    if (trailer.length != 2) {
+                        outputMessages.push("Trailer line should with the format 'Key:Value'");
+                    } else {
+                        const key = trailer[0];
+                        const value = trailer[1].replace(" ", "");
+                        if (key != "Changelog") {
+                            outputMessages.push(`${key} is not a valid trailer key.`);
+                        }
+                        if (!validChangelogValues.includes(value)) {
+                            outputMessages.push(`${value} is not a valid trailer value.`);
+                        }
+                    }
+                    fs.writeFileSync("/tmp/check-commit.txt", outputMessages.join('\n'), "utf-8");
+            - name: Save result
+              uses: actions/upload-artifact@v4
+              with:
+                 name: check-commit
+                 path: "/tmp/check-commit.txt"
+                 retention-days: 1
+                 if-no-files-found: error                                  
+                
+    lint:
+        if: github.event.pull_request.draft == false
+        runs-on: windows-2022
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+            - name: Setup msbuild
+              uses: microsoft/setup-msbuild@v1.3.1
+            - name: Run clang tidy
+              shell: cmd
+              run : |
+                  clang-tidy -Wc++17-extensions windows/src/*.cpp -- -I windows/includes -D UNICODE -D "_UNICODE" > tidy-errors.txt || ver > nul
+            - name: Filter reviews
+              uses: actions/github-script@v7
+              with:
+                script: |
+                    const fs = require("fs");
+                    const path = require("path");
+                    var messages = fs.readFileSync('tidy-errors.txt', 'utf-8').split(/\n/);
+                    messages = messages.filter((line) => line.includes(": error:"));
+                    var errors = ""
+                    for (var i =0; i < messages.length; i++) {
+                        const parts = messages[i].split(/: error:/);
+                        const location = path.relative("", parts[0])
+                            .replaceAll("\\","/");
+                        const error = parts[1].replaceAll("'", "`");
+                        errors += `${location}@@${error}\n`;
+                    }
+                    fs.writeFileSync('lint-errors.txt', errors, 'utf-8');
+                    console.log({
+                        wrk: "${{ github.workspace }}",
+                        t: errors
+                    });
+            - name: Save result
+              uses: actions/upload-artifact@v4
+              with:
+                 name: lint-errors
+                 path: "lint-errors.txt"
+                 retention-days: 1
+                 if-no-files-found: error
+
+    review:
+        if: github.event.pull_request.draft == false
+        needs: 
+            - lint
+            - check-commit
+        runs-on: ubuntu-latest
+        steps:
+            - name: Retrive check-commit result
+              uses: actions/download-artifact@v4
+              with:
+                 name: check-commit
+                 path: "/tmp"
+            - name: Retrieve lint result
+              uses: actions/download-artifact@v4
+              with:
+                 name: lint-errors
+                 path: "/tmp"
+            - name: Prepare reviews
+              uses: actions/github-script@v7
+              with:
+                script: |
+                    const fs = require("fs");
+
+                    var globalMessage = "";
+                    console.log("Checking commit-lint status");
+                    const commitChecks = fs.readFileSync("/tmp/check-commit.txt", "utf-8")
+                        .split("\n")
+                        .filter((line) => line.length > 0);
+                    if (commitChecks.length > 0) {
+                        var comment = "Your PullRequest doesn't respect the expected commit format : \n";
+                        for (var i=0; i < commitChecks.length; i++) {
+                            comment += `* ${commitChecks[i]}\n`;
+                        }
+                        globalMessage += `${comment}\n`;
+                    }
+
+                    const comments = [];
+                    console.log("Checking lint status");
+                    const lintErrors = fs.readFileSync("/tmp/lint-errors.txt", "utf-8")
+                        .split("\n")
+                        .filter((line) => line.length > 0);
+                    for (var i=0; i < lintErrors.length; i++) {
+                        const lintError = lintErrors[i].split("@@");
+                        const location = lintError[0].split(':');
+                        const msg = lintError[1];
+                        const path = location[0];
+                        const line = location[1];
+                        comments.push({
+                            path: path,
+                            line: parseInt(line, 10),
+                            body: msg,
+                        });
+                    }
+
+                    var reviewBody = `${comments.length} changes needed please.`;
+                    if (globalMessage.length > 0) {
+                        reviewBody += ` Also, in a global way, \n${globalMessage}`;
+                    }
+                    await github.rest.pulls.createReview({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        pull_number: context.issue.number,
+                        comments: comments,
+                        body: (comments.length > 0) ? reviewBody : "LGTM",
+                        event: (comments.length > 0) ? "REQUEST_CHANGES" : "APPROVE",
+                    });
+                    
+                    
